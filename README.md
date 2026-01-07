@@ -10,11 +10,10 @@
    git clone <repository_url>
 
 2. 依存関係をインストール：
+   npm install
 
-npm install
 3. アプリを起動：
-
-npm start
+   npm start
 
 注意事項
 
