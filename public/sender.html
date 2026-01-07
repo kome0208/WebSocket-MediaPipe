@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Hand Tracker Sender</title>
+</head>
+<body style="position:relative;">
+
+  <h2>Hand Tracking Sender</h2>
+  <p>カメラの許可を与えてください</p>
+  <p>同時入力できる手は一つです</p>
+
+  <!-- 映像 -->
+  <video id="video" autoplay playsinline style="width:80vw; max-width:100%;"></video>
+
+  <!-- 重ねるキャンバス -->
+  <canvas id="overlay"
+          style="position:absolute; left:0; top:0; pointer-events:none;"></canvas>
+
+  <!-- MediaPipe CDN版 -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+  <script>
+    // ===============================
+    // 1. WebSocket 接続
+    // ===============================
+    const ws = new WebSocket(`wss://${location.host}`);
+    ws.onopen = () => console.log("WS connected (sender)");
+
+    // ===============================
+    // 2. DOM取得
+    // ===============================
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("overlay");
+    const ctx = canvas.getContext("2d");
+
+    // videoサイズに合わせてcanvasを同期
+    video.addEventListener("loadedmetadata", () => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+    });
+
+    // ===============================
+    // 3. MediaPipe Hands 設定
+    // ===============================
+    const hands = new Hands({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+    });
+
+    hands.setOptions({
+      maxNumHands: 1,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.6,
+      minTrackingConfidence: 0.6,
+    });
+
+    // ===============================
+    // 4. 送信制御（送信頻度制限）
+    // ===============================
+    let lastSend = 0;
+
+    function sendWristPosition(landmarks) {
+      const now = performance.now();
+      if (now - lastSend < 100) return;
+      lastSend = now;
+
+      if (!landmarks) return;
+      const wrist = landmarks[0];
+
+      ws.send(JSON.stringify({ x: wrist.x, y: wrist.y }));
+    }
+
+    // ===============================
+    // 5. 手首の赤点を描画
+    // ===============================
+    function drawWristDot(landmarks) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (!landmarks) return;
+
+      const wrist = landmarks[0];
+
+      const x = wrist.x * canvas.width;
+      const y = wrist.y * canvas.height;
+
+      ctx.beginPath();
+      ctx.arc(x, y, 10, 0, Math.PI * 2);
+      ctx.fillStyle = "red";
+      ctx.fill();
+    }
+
+    // ===============================
+    // 6. MediaPipeの結果を受け取る
+    // ===============================
+    hands.onResults((results) => {
+      const landmarks = results.multiHandLandmarks?.[0];
+
+      // WebSocket送信
+      sendWristPosition(landmarks);
+
+      // 画面に表示
+      drawWristDot(landmarks);
+    });
+
+    // ===============================
+    // 7. カメラ起動
+    // ===============================
+    const camera = new Camera(video, {
+      onFrame: async () => {
+        await hands.send({ image: video });
+      },
+      width: 640,
+      height: 480,
+    });
+
+    camera.start();
+  </script>
+</body>
+</html>
