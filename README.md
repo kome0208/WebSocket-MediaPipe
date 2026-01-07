@@ -4,16 +4,6 @@
 
 このプロジェクトは、MediaPipe の手のトラッキングデータを利用し、p5.js でインタラクティブなデジタルアートを簡単に体験できるコードセットです。
 
-### ファイル構成
-├─ package.json
-├─ index.js # Express + WebSocket サーバ
-├─ public/
-│ ├─ index.html # メイン画面
-│ ├─ sketch.js # 作業用の素の p5.js スケッチ
-│ └─ ... # その他必要なファイル
-├─ sample/ # 自分の作品例
-└─ README.md
-
 ### セットアップ
 
 1. リポジトリをクローン：
@@ -36,16 +26,6 @@ WSL2 上では動作しない場合があります。Windows PowerShell での�
 ## English
 This project is a simple code set that uses hand-tracking data from MediaPipe and renders it in p5.js to create interactive digital art.
 
-File Structure
-.
-├─ package.json
-├─ index.js                # Express + WebSocket server
-├─ public/
-│  ├─ index.html           # Main page
-│  ├─ sketch.js            # Raw p5.js sketch for development
-│  └─ ...                  # Other necessary files
-├─ sample/                 # Example works
-└─ README.md
 Setup
 ①Clone this repository:
 
